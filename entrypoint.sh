@@ -3,6 +3,7 @@ set -euo pipefail
 
 USER="user"
 ORG="default"
+INITIALISED="$(egrep -r 'CERTIFICATE' $TASKDCERTS | wc -l)" || true
 
 generate_server_certs() {
   cd $TASKDCERTS && cp $TASKDGIT/pki/vars $TASKDCERTS/vars
@@ -30,4 +31,8 @@ init() {
   print_user_info
 }
 
-init && taskd server --data $TASKDDATA
+if [[ (( $INITIALISED < 1 )) ]]; then
+  init
+fi
+
+taskd server --data $TASKDDATA
