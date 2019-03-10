@@ -12,16 +12,15 @@ TASKD_LOG=${TASKD_LOG:="/dev/stdout"}
 TASKD_PID_FILE=${TASKD_PID_FILE:="$TASKDHOME/taskd.pid"}
 TASKD_SERVER=${TASKD_SERVER:="0.0.0.0:53589"}
 
-# Export the necessary certificate vars, fall back to default values
-export TASKD_SEC_PARAM=${SEC_PARAM:="high"}
-export TASKD_EXPIRATION_DAYS=${EXPIRATION_DAYS:="365"}
-export TASKD_ORGANIZATION=${ORGANIZATION:='"Göteborg Bit Factory"'}
-export TASKD_CN=${CN:="localhost"}
-export TASKD_COUNTRY=${COUNTRY:="SE"}
-export TASKD_STATE=${STATE:='"Västra Götaland"'}
-export TASKD_LOCALITY=${LOCALITY:='"Göteborg"'}
-
+# Override the pki variables or fallback to default values
 pki_vars_override() {
+    TASKD_SEC_PARAM=${TASKD_SEC_PARAM:="high"} \
+    TASKD_EXPIRATION_DAYS=${TASKD_EXPIRATION_DAYS:="365"} \
+    TASKD_ORGANIZATION=${TASKD_ORGANIZATION:='"Göteborg Bit Factory"'} \
+    TASKD_CN=${TASKD_CN:="localhost"} \
+    TASKD_COUNTRY=${TASKD_COUNTRY:="SE"} \
+    TASKD_STATE=${TASKD_STATE:='"Västra Götaland"'} \
+    TASKD_LOCALITY=${TASKD_LOCALITY:='"Göteborg"'} \
     envsubst < $TASKDPKI/vars.template > $TASKDPKI/vars
 }
 
