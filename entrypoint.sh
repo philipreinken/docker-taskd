@@ -25,18 +25,38 @@ pki_vars_override() {
 }
 
 create_certificates() {
-    pki_vars_override && (cd $TASKDPKI && ./generate)
+    pki_vars_override && (cd $TASKDPKI && ./generate >/dev/null 2>&1)
+}
+
+cut_shasum() {
+    echo "$(echo -n "$1" | sha256sum - | awk '{ print $1 }' | cut -c-12 -)"
+}
+
+generate_user_cert() {
+    (cd $TASKDPKI && ./generate.client $1 >/dev/null 2>&1)
+}
+
+print_user_cert() {
+    cat "$TASKDPKI/$(cut_shasum $1).cert.pem"
+}
+
+print_user_key() {
+    cat "$TASKDPKI/$(cut_shasum $1).key.pem"
+}
+
+print_ca_cert() {
+    cat "$TASKDPKI/ca.cert.pem"
 }
 
 taskd_init() {
     taskd init
     create_certificates
-    
+
     # Configure all generated certificates
     for cert in $TASKDPKI/*.pem; do
         cert="$(basename $cert)"
         config="${cert%.pem}"
-        
+
         # In case of the api.* certificate, the config key needs to be client.*
         if [[ $cert =~ ^api ]]; then
             config="${config/#api/client}"
@@ -49,12 +69,75 @@ taskd_init() {
     taskd config --force pid.file $TASKD_PID_FILE
     taskd config --force server $TASKD_SERVER
 
-    # Display config
-    taskd config
+    # Display diagnostics
+    taskd diagnostics
 }
 
-if [[ ! -e "$TASKDDATA/config" ]]; then
-    taskd_init
-fi
+taskd_start() {
+    taskd server --data $TASKDDATA
+}
 
-taskd server --data $TASKDDATA
+taskd_add_org() {
+    taskd add org $1
+}
+
+taskd_add_user() {
+    org="$1"
+    username="$2"
+    key="$(taskd add user $org $username | awk -F ': ' '/New user key/{ print $2 }')"
+    filename="$(cut_shasum $username)"
+
+    # Generate client certificates for user
+    generate_user_cert "$filename"
+
+    printf "%-15s\t%-25s\t%-40s\n" "ORG" "USERNAME" "KEY"
+    printf "%-15s\t%-25s\t%-40s\n" "$org" "$username" "$key"
+}
+
+main() {
+    if [[ ! -e "$TASKDDATA/config" ]]; then
+        taskd_init
+    fi
+
+    start=1
+
+    while [[ (($# > 0)) ]]
+    do
+        case "$1" in
+            -a|--add-user)
+                taskd_add_user "$2" "$3"
+                shift 3
+                start=0
+                ;;
+            -o|--add-org)
+                taskd_add_org "$2"
+                shift 2
+                start=0
+                ;;
+            --user-cert)
+                print_user_cert "$2"
+                shift 2
+                start=0
+                ;;
+            --user-key)
+                print_user_key "$2"
+                shift 2
+                start=0
+                ;;
+            --ca-cert)
+                print_ca_cert
+                shift
+                start=0
+                ;;
+            *)
+                shift
+                ;;
+          esac
+    done
+
+    if [[ (($start > 0)) ]]; then
+        taskd_start
+    fi
+}
+
+main $@
