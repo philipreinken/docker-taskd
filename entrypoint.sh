@@ -25,23 +25,25 @@ pki_vars_override() {
 }
 
 create_certificates() {
-    pki_vars_override && (cd $TASKDPKI && ./generate >/dev/null 2>&1)
+    pki_vars_override && (cd "$TASKDPKI" && ./generate >/dev/null 2>&1)
 }
 
 cut_shasum() {
-    echo "$(echo -n "$1" | sha256sum - | awk '{ print $1 }' | cut -c-12 -)"
+    echo -n "$1" | sha256sum - | awk '{ print $1 }' | cut -c-12 -
 }
 
 generate_user_cert() {
-    (cd $TASKDPKI && ./generate.client $1 >/dev/null 2>&1)
+    (cd "$TASKDPKI" && ./generate.client "$1" >/dev/null 2>&1)
 }
 
 print_user_cert() {
-    cat "$TASKDPKI/$(cut_shasum $1).cert.pem"
+    cert_file_sha=$(cut_shasum "$1")
+    cat "$TASKDPKI/$cert_file_sha.cert.pem"
 }
 
 print_user_key() {
-    cat "$TASKDPKI/$(cut_shasum $1).key.pem"
+    key_file_sha=$(cut_shasum "$1")
+    cat "$TASKDPKI/$key_file_sha.key.pem"
 }
 
 print_ca_cert() {
@@ -54,7 +56,7 @@ taskd_init() {
 
     # Configure all generated certificates
     for cert in $TASKDPKI/*.pem; do
-        cert="$(basename $cert)"
+        cert=$(basename "$cert")
         config="${cert%.pem}"
 
         # In case of the api.* certificate, the config key needs to be client.*
@@ -62,36 +64,34 @@ taskd_init() {
             config="${config/#api/client}"
         fi;
 
-        taskd config --force $config "$TASKDPKI/$cert"
+        taskd config --force "$config" "$TASKDPKI/$cert"
     done;
 
-    taskd config --force log $TASKD_LOG
-    taskd config --force pid.file $TASKD_PID_FILE
-    taskd config --force server $TASKD_SERVER
+    taskd config --force log "$TASKD_LOG"
+    taskd config --force pid.file "$TASKD_PID_FILE"
+    taskd config --force server "$TASKD_SERVER"
 
     # Display diagnostics
     taskd diagnostics
 }
 
 taskd_start() {
-    taskd server --data $TASKDDATA
+    taskd server --data "$TASKDDATA"
 }
 
 taskd_add_org() {
-    taskd add org $1
+    taskd add org "$1"
 }
 
 taskd_add_user() {
-    org="$1"
-    username="$2"
-    key="$(taskd add user $org $username | awk -F ': ' '/New user key/{ print $2 }')"
-    filename="$(cut_shasum $username)"
+    key=$(taskd add user "$1" "$2" | awk -F ': ' '/New user key/{ print $2 }')
+    filename=$(cut_shasum "$2")
 
     # Generate client certificates for user
     generate_user_cert "$filename"
 
     printf "%-15s\t%-25s\t%-40s\n" "ORG" "USERNAME" "KEY"
-    printf "%-15s\t%-25s\t%-40s\n" "$org" "$username" "$key"
+    printf "%-15s\t%-25s\t%-40s\n" "$1" "$2" "$key"
 }
 
 main() {
@@ -140,4 +140,4 @@ main() {
     fi
 }
 
-main $@
+main "$@"
