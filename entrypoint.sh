@@ -28,26 +28,8 @@ create_certificates() {
     pki_vars_override && (cd "$TASKDPKI" && ./generate >/dev/null 2>&1)
 }
 
-cut_shasum() {
-    echo -n "$1" | sha256sum - | awk '{ print $1 }' | cut -c-12 -
-}
-
 generate_user_cert() {
     (cd "$TASKDPKI" && ./generate.client "$1" >/dev/null 2>&1)
-}
-
-print_user_cert() {
-    cert_file_sha=$(cut_shasum "$1")
-    cat "$TASKDPKI/$cert_file_sha.cert.pem"
-}
-
-print_user_key() {
-    key_file_sha=$(cut_shasum "$1")
-    cat "$TASKDPKI/$key_file_sha.key.pem"
-}
-
-print_ca_cert() {
-    cat "$TASKDPKI/ca.cert.pem"
 }
 
 taskd_init() {
@@ -85,13 +67,13 @@ taskd_add_org() {
 
 taskd_add_user() {
     key=$(taskd add user "$1" "$2" | awk -F ': ' '/New user key/{ print $2 }')
-    filename=$(cut_shasum "$2")
+    filename=$(head /dev/urandom | tr -dc [:alnum:] | head -c12)
 
     # Generate client certificates for user
     generate_user_cert "$filename"
 
-    printf "%-15s\t%-25s\t%-40s\n" "ORG" "USERNAME" "KEY"
-    printf "%-15s\t%-25s\t%-40s\n" "$1" "$2" "$key"
+    printf "%-20s\t%-20s\t%-40s\t%-12s\n" "ORG" "USERNAME" "KEY" "USER-CERT"
+    printf "%-20s\t%-20s\t%-40s\t%-12s\n" "$1" "$2" "$key" "$filename"
 }
 
 main() {
@@ -104,28 +86,28 @@ main() {
     while [[ (($# > 0)) ]]
     do
         case "$1" in
-            -a|--add-user)
+            add-user)
                 taskd_add_user "$2" "$3"
                 shift 3
                 start=0
                 ;;
-            -o|--add-org)
+            add-org)
                 taskd_add_org "$2"
                 shift 2
                 start=0
                 ;;
-            --user-cert)
-                print_user_cert "$2"
+            user-cert)
+                cat "$TASKDPKI/$2.cert.pem"
                 shift 2
                 start=0
                 ;;
-            --user-key)
-                print_user_key "$2"
+            user-key)
+                cat "$TASKDPKI/$2.key.pem"
                 shift 2
                 start=0
                 ;;
-            --ca-cert)
-                print_ca_cert
+            ca-cert)
+                cat "$TASKDPKI/ca.cert.pem"
                 shift
                 start=0
                 ;;
