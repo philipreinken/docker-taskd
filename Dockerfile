@@ -1,16 +1,20 @@
-FROM ubuntu:18.04
+FROM alpine:latest
 
-ENV DEBIAN_FRONTEND="noninteractive"
 ENV TASKDHOME="/home/taskd"
 ENV TASKDDATA="$TASKDHOME/data"
 ENV TASKDGIT="$TASKDHOME/taskd.git"
 ENV TASKDPKI="$TASKDDATA/pki"
-ENV BUILD_DEPENDENCIES="python git libgnutls28-dev uuid-dev build-essential cmake ca-certificates"
+ENV BUILD_DEPENDENCIES="python git cmake make gcc g++"
 
-RUN useradd -m taskd && \
-  apt update && apt upgrade -y && \
-  apt install -y --no-install-recommends ${BUILD_DEPENDENCIES} gnutls-bin gettext-base && \
-  update-ca-certificates && \
+RUN addgroup taskd && adduser -h $TASKDHOME -g '' -G taskd -D taskd && \
+  apk upgrade -U && \
+  apk add --no-cache ${BUILD_DEPENDENCIES} \
+    libgcc \
+    gnutls-dev \
+    gnutls-utils \
+    util-linux-dev \
+    gettext \
+    bash && \
   git clone --depth=1 https://github.com/GothenburgBitFactory/taskserver.git $TASKDGIT && \
   cd $TASKDGIT && \
   git submodule init && git submodule update && \
@@ -18,10 +22,9 @@ RUN useradd -m taskd && \
   make && \
   cd test && make && ./run_all && cd .. && \
   make install && \
+  apk del ${BUILD_DEPENDENCIES} && \
   mkdir -p $TASKDDATA && \
   cp -r $TASKDGIT/pki $TASKDPKI && \
-  apt remove -y --autoremove ${BUILD_DEPENDENCIES} && \
-  apt-get clean && \
   chown -R taskd:taskd $TASKDHOME
 
 COPY entrypoint.sh $TASKDHOME/entrypoint.sh
