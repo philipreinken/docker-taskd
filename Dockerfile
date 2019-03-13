@@ -4,11 +4,17 @@ ENV TASKDHOME="/home/taskd"
 ENV TASKDDATA="$TASKDHOME/data"
 ENV TASKDGIT="$TASKDHOME/taskd.git"
 ENV TASKDPKI="$TASKDDATA/pki"
-ENV BUILD_DEPENDENCIES="python git cmake make gcc g++"
 
 RUN addgroup taskd && adduser -h $TASKDHOME -g '' -G taskd -D taskd && \
   apk upgrade -U && \
-  apk add --no-cache ${BUILD_DEPENDENCIES} \
+  apk add --no-cache --virtual=taskd-build-dependencies \
+    python \
+    git \
+    cmake \
+    make \
+    gcc \
+    g++ && \
+  apk add --no-cache \
     libgcc \
     gnutls-dev \
     gnutls-utils \
@@ -22,7 +28,7 @@ RUN addgroup taskd && adduser -h $TASKDHOME -g '' -G taskd -D taskd && \
   make && \
   cd test && make && ./run_all && cd .. && \
   make install && \
-  apk del ${BUILD_DEPENDENCIES} && \
+  apk del taskd-build-dependencies && \
   mkdir -p $TASKDDATA && \
   cp -r $TASKDGIT/pki $TASKDPKI && \
   chown -R taskd:taskd $TASKDHOME
