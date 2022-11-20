@@ -1,5 +1,7 @@
 FROM alpine:latest
 
+ARG TASKD_COMMIT="1.2.0"
+
 ENV TASKDHOME="/home/taskd"
 ENV TASKDDATA="$TASKDHOME/data"
 ENV TASKDGIT="$TASKDHOME/taskd.git"
@@ -8,7 +10,7 @@ ENV TASKDPKI="$TASKDDATA/pki"
 RUN addgroup taskd && adduser -h $TASKDHOME -g '' -G taskd -D taskd && \
   apk upgrade -U && \
   apk add --no-cache --virtual=taskd-build-dependencies \
-    python \
+    python3 \
     git \
     cmake \
     make \
@@ -21,8 +23,10 @@ RUN addgroup taskd && adduser -h $TASKDHOME -g '' -G taskd -D taskd && \
     util-linux-dev \
     gettext \
     bash && \
-  git clone --depth=1 https://github.com/GothenburgBitFactory/taskserver.git $TASKDGIT && \
+  ln -sf $(which python3) /usr/local/bin/python && \
+  git clone https://github.com/GothenburgBitFactory/taskserver.git $TASKDGIT && \
   cd $TASKDGIT && \
+  git checkout $COMMIT && \
   git submodule init && git submodule update && \
   cmake -DCMAKE_BUILD_TYPE=release . && \
   make && \
