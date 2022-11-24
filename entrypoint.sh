@@ -58,7 +58,11 @@ taskd_init() {
 }
 
 taskd_start() {
-    taskd server --data "$TASKDDATA"
+    if [ -n "${DEBUG:-}" ]; then
+        taskd server --debug --debug.tls=2 --data "${TASKDDATA}"
+    else
+        taskd server --data "${TASKDDATA}"
+    fi
 }
 
 taskd_add_org() {

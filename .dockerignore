@@ -1,2 +1,5 @@
-README.md
-LICENSE
+*
+
+!/Dockerfile
+!/entrypoint.sh
+!/vars.template

@@ -1,10 +1,24 @@
 # docker-taskd
 > container setup for [taskd](https://taskwarrior.org/docs/#taskd)
 
+## Initialisation
+
+When running the server for the first time, it will generate a config and certificate, unless they've been provided
+already. It is important to set the
+[variables for certificate generation](https://github.com/philipgatzka/docker-taskd/blob/master/vars.template) in this
+case, since the defaults
+
+> are guaranteed to be wrong for you
+
+to cite the [upstream setup guide](https://gothenburgbitfactory.github.io/taskserver-setup/).
+
+Especially `TASKD_CN` should be set to the domain name of the server running `taskd`, otherwise the client will refuse
+to connect. To do this, add `-e TASKD_CN="[your domain]"` to the `docker run` example [below](#running).
+
 ## Running
 
 ```bash
-docker run -d -v taskd-data:/home/taskd/data -p 53589:53589 --name taskd taskd
+docker run -d -v taskd-data:/home/taskd/data -p 53589:53589 --name taskd philipgatzka/docker-taskd
 ```
 
 ## Account Creation
@@ -12,13 +26,13 @@ docker run -d -v taskd-data:/home/taskd/data -p 53589:53589 --name taskd taskd
 Each account belongs to an organisation, so that has to be added first:
 
 ```bash
-docker run --rm -v taskd-data:/home/taskd/data taskd add-org 'Some Org'
+docker run --rm -v taskd-data:/home/taskd/data philipgatzka/docker-taskd add-org 'Some Org'
 ```
 
 The user account can then be added with reference to an existing organisation:
 
 ```bash
-docker run --rm -v taskd-data:/home/taskd/data taskd add-user 'Some Org' 'John Doe'
+docker run --rm -v taskd-data:/home/taskd/data philipgatzka/docker-taskd add-user 'Some Org' 'John Doe'
 ```
 
 The `add-user` command is a wrapper around the taskservers built-in `add user`
@@ -39,7 +53,7 @@ using the value provided in the `USER-CERT` column.
 To retrieve the servers CA certificate run:
 
 ```bash
-docker run --rm -v taskd-data:/home/taskd/data taskd ca-cert > ~/.task/ca.cert.pem
+docker run --rm -v taskd-data:/home/taskd/data philipgatzka/docker-taskd ca-cert > ~/.task/ca.cert.pem
 ```
 
 ### User certificate and key
@@ -47,6 +61,6 @@ docker run --rm -v taskd-data:/home/taskd/data taskd ca-cert > ~/.task/ca.cert.p
 To retrieve the user account certificate and key run:
 
 ```bash
-docker run --rm -v taskd-data:/home/taskd/data taskd user-cert 'u53r0C3rt1d0' > ~/.task/user.cert.pem
-docker run --rm -v taskd-data:/home/taskd/data taskd user-key 'u53r0C3rt1d0' > ~/.task/user.key.pem
+docker run --rm -v taskd-data:/home/taskd/data philipgatzka/docker-taskd user-cert 'u53r0C3rt1d0' > ~/.task/user.cert.pem
+docker run --rm -v taskd-data:/home/taskd/data philipgatzka/docker-taskd user-key 'u53r0C3rt1d0' > ~/.task/user.key.pem
 ```
