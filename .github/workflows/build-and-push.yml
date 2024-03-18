@@ -36,9 +36,9 @@ jobs:
         with:
           build-args: TASKD_COMMIT=${{ env.TASKD_STABLE_COMMIT }}
           push: true
-          tags: philipgatzka/docker-taskd:latest,philipgatzka/docker-taskd:${{ env.TASKD_STABLE_COMMIT }}
-          cache-from: type=registry,ref=philipgatzka/docker-taskd:buildcache
-          cache-to: type=registry,ref=philipgatzka/docker-taskd:buildcache,mode=max
+          tags: philipreinken/docker-taskd:latest,philipreinken/docker-taskd:${{ env.TASKD_STABLE_COMMIT }}
+          cache-from: type=registry,ref=philipreinken/docker-taskd:buildcache
+          cache-to: type=registry,ref=philipreinken/docker-taskd:buildcache,mode=max
 
       -
         name: Build and push dev
@@ -46,6 +46,6 @@ jobs:
         with:
           build-args: TASKD_COMMIT=${{ env.TASKD_DEV_COMMIT }}
           push: true
-          tags: philipgatzka/docker-taskd:dev,philipgatzka/docker-taskd:${{ env.TASKD_DEV_COMMIT }}
-          cache-from: type=registry,ref=philipgatzka/docker-taskd:buildcache
-          cache-to: type=registry,ref=philipgatzka/docker-taskd:buildcache,mode=max
+          tags: philipreinken/docker-taskd:dev,philipreinken/docker-taskd:${{ env.TASKD_DEV_COMMIT }}
+          cache-from: type=registry,ref=philipreinken/docker-taskd:buildcache
+          cache-to: type=registry,ref=philipreinken/docker-taskd:buildcache,mode=max
