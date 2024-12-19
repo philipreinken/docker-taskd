@@ -1,3 +1,9 @@
+# ⚠️ Deprecated
+
+As of taskwarrior v3.0.0, `taskd` is not supported as a sync backend anymore [1], hence I'll discontinue this project.
+
+[[1] https://taskwarrior.org/docs/upgrade-3/#upgrading-sync](https://taskwarrior.org/docs/upgrade-3/#upgrading-sync)
+
 # docker-taskd
 > container setup for [taskd](https://taskwarrior.org/docs/#taskd)
 
